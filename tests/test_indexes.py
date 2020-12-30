@@ -1,65 +1,93 @@
-import asyncio
 from typing import List
+from unittest import IsolatedAsyncioTestCase
 
+import docker
 import httpx
-import pytest
 
-from aio_meilisearch import indexes
-from aio_meilisearch.common import MeiliConfig
+from aio_meilisearch.endpoints import indexes
 from aio_meilisearch.types import IndexDict
+from .utils import (
+    get_docker_client,
+    start_meili_container,
+    kill_docker_container,
+    get_testing_meili_config,
+)
 
 
-def test_flow(loop: asyncio.AbstractEventLoop, testing_meili_config: MeiliConfig):
-    response = loop.run_until_complete(indexes.get_all(testing_meili_config))
+class TestIndexes(IsolatedAsyncioTestCase):
+    docker_client: docker.APIClient = None
+    meili_container: dict = None
 
-    assert len(response) == 0
-
-    response = loop.run_until_complete(
-        indexes.get_one(meili_config=testing_meili_config, name="books")
-    )
-
-    assert response is None
-
-    with pytest.raises(httpx.HTTPStatusError) as e:
-        _ = loop.run_until_complete(
-            indexes.get_one(
-                meili_config=testing_meili_config, name="books", raise_404=True
-            )
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.docker_client = get_docker_client()
+        cls.meili_config = get_testing_meili_config()
+        cls.meili_container = start_meili_container(
+            docker_client=cls.docker_client, meili_config=cls.meili_config
         )
 
-    assert e.value.response.status_code == httpx.codes.NOT_FOUND
+    @classmethod
+    def tearDownClass(cls) -> None:
+        kill_docker_container(cls.docker_client, cls.meili_container)
 
-    index: IndexDict = loop.run_until_complete(
-        indexes.create_one(meili_config=testing_meili_config, name="books")
-    )
+    async def test_flow(self):
+        async with httpx.AsyncClient() as http_client:
+            response = await indexes.get_all(self.meili_config, http_client=http_client)
 
-    assert index["uid"] == "books"
-    # assert index["primaryKey"] == "id"
+            assert len(response) == 0
 
-    index_list: List[IndexDict] = loop.run_until_complete(
-        indexes.get_all(meili_config=testing_meili_config)
-    )
+            response = await indexes.get_one(
+                meili_config=self.meili_config,
+                http_client=http_client,
+                name="books",
+            )
 
-    assert len(index_list) == 1
+            assert response is None
 
-    index: IndexDict = loop.run_until_complete(
-        indexes.get_one(meili_config=testing_meili_config, name="books")
-    )
+            with self.assertRaises(httpx.HTTPStatusError) as ctx:
+                _ = await indexes.get_one(
+                    meili_config=self.meili_config,
+                    http_client=http_client,
+                    name="books",
+                    raise_404=True,
+                )
 
-    assert index["uid"] == "books"
+            assert ctx.exception.response.status_code == httpx.codes.NOT_FOUND
 
-    index: IndexDict = loop.run_until_complete(
-        indexes.update_one(meili_config=testing_meili_config, name="books", pk="id")
-    )
+            index: IndexDict = await indexes.create_one(
+                meili_config=self.meili_config, http_client=http_client, name="books"
+            )
 
-    assert index["primaryKey"] == "id"
+            assert index["uid"] == "books"
+            # assert index["primaryKey"] == "id"
 
-    loop.run_until_complete(
-        indexes.delete_one(meili_config=testing_meili_config, name="books")
-    )
+            index_list: List[IndexDict] = await indexes.get_all(
+                meili_config=self.meili_config, http_client=http_client
+            )
 
-    index_list = loop.run_until_complete(
-        indexes.get_all(meili_config=testing_meili_config)
-    )
+            assert len(index_list) == 1
 
-    assert len(index_list) == 0
+            index: IndexDict = await indexes.get_one(
+                meili_config=self.meili_config, http_client=http_client, name="books"
+            )
+
+            assert index["uid"] == "books"
+
+            index: IndexDict = await indexes.update_one(
+                meili_config=self.meili_config,
+                http_client=http_client,
+                name="books",
+                pk="id",
+            )
+
+            assert index["primaryKey"] == "id"
+
+            await indexes.delete_one(
+                meili_config=self.meili_config, http_client=http_client, name="books"
+            )
+
+            index_list = await indexes.get_all(
+                meili_config=self.meili_config, http_client=http_client
+            )
+
+            self.assertEqual(0, len(index_list))

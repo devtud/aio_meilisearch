@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Union
 
 import httpx
 
@@ -6,14 +6,12 @@ import httpx
 class MeiliConfig:
     def __init__(
         self,
-        http_client: httpx.AsyncClient,
         base_url: str,
         *,
         master_key: str = None,
         private_key: str = None,
         public_key: str = None,
     ):
-        self.http_client: httpx.AsyncClient = http_client
         self.base_url: str = base_url.strip("/")
         self.master_key: Optional[str] = master_key
         self.private_key: Optional[str] = private_key
@@ -23,10 +21,11 @@ class MeiliConfig:
 async def request(
     *,
     meili_config: MeiliConfig,
+    http_client: httpx.AsyncClient,
     method: str,
     endpoint: str,
     params: dict = None,
-    json: dict = None,
+    json: Union[dict, list] = None,
     api_key: str = None,
 ) -> bytes:
     url = f"{meili_config.base_url}/{endpoint.strip('/')}"
@@ -36,7 +35,7 @@ async def request(
 
     headers = {"Content-Type": "application/json", "X-Meili-API-Key": api_key}
 
-    r = await meili_config.http_client.request(
+    r = await http_client.request(
         method=method, url=url, params=params, headers=headers, json=json
     )
 
