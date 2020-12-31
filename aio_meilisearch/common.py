@@ -25,7 +25,7 @@ async def request(
     method: str,
     endpoint: str,
     params: dict = None,
-    json: Union[dict, list] = None,
+    data: Union[dict, list] = None,
     api_key: str = None,
 ) -> bytes:
     url = f"{meili_config.base_url}/{endpoint.strip('/')}"
@@ -36,7 +36,7 @@ async def request(
     headers = {"Content-Type": "application/json", "X-Meili-API-Key": api_key}
 
     r = await http_client.request(
-        method=method, url=url, params=params, headers=headers, json=json
+        method=method, url=url, params=params, headers=headers, json=data
     )
 
     r.raise_for_status()

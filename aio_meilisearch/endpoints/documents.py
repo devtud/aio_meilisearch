@@ -64,7 +64,7 @@ class Index(Generic[T]):
             http_client=self.http_client,
             method=method,
             endpoint=f"/indexes/{self.name}/documents",
-            json=documents,
+            data=documents,
             api_key=self.meili_config.private_key,
         )
 
@@ -118,7 +118,7 @@ class Index(Generic[T]):
             http_client=self.http_client,
             method=method,
             endpoint=endpoint,
-            json=data,
+            data=data,
         )
 
         update: UpdateDict = json.loads(response)
@@ -144,7 +144,7 @@ class Index(Generic[T]):
             http_client=self.http_client,
             method="POST",
             endpoint=f"/indexes/{self.name}/search",
-            json={
+            data={
                 "q": query,
                 "offset": offset,
                 "limit": limit,

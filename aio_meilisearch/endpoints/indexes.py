@@ -53,7 +53,7 @@ async def create_one(
             http_client=http_client,
             method="POST",
             endpoint="/indexes",
-            json={"uid": name, "primaryKey": pk},
+            data={"uid": name, "primaryKey": pk},
             api_key=meili_config.private_key,
         )
     )
@@ -68,7 +68,7 @@ async def update_one(
             http_client=http_client,
             method="PUT",
             endpoint=f"/indexes/{name}",
-            json={"primaryKey": pk},
+            data={"primaryKey": pk},
             api_key=meili_config.private_key,
         )
     )
