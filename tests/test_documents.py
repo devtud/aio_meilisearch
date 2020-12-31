@@ -1,36 +1,12 @@
-from asyncio import AbstractEventLoop
 from typing import TypedDict
-from unittest import IsolatedAsyncioTestCase
 
-import docker
 import httpx
 
-from aio_meilisearch.common import MeiliConfig
 from aio_meilisearch.endpoints.documents import Index
-from tests.utils import (
-    get_docker_client,
-    get_testing_meili_config,
-    start_meili_container,
-    kill_docker_container,
-)
+from tests.utils import DockerTestCase
 
 
-class TestDocument(IsolatedAsyncioTestCase):
-    docker_client: docker.APIClient = None
-    meili_container: dict = None
-
-    @classmethod
-    def setUpClass(cls) -> None:
-        cls.docker_client = get_docker_client()
-        cls.meili_config = get_testing_meili_config()
-        cls.meili_container = start_meili_container(
-            docker_client=cls.docker_client, meili_config=cls.meili_config
-        )
-
-    @classmethod
-    def tearDownClass(cls) -> None:
-        kill_docker_container(cls.docker_client, cls.meili_container)
-
+class TestDocument(DockerTestCase):
     async def test_instantiate_index(self):
         async with httpx.AsyncClient() as http_client:
             index = Index(

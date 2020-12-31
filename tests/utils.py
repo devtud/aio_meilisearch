@@ -1,4 +1,6 @@
 import uuid
+from time import sleep
+from unittest.async_case import IsolatedAsyncioTestCase
 
 import docker
 
@@ -60,3 +62,21 @@ def start_meili_container(
 def kill_docker_container(docker_client: docker.APIClient, container: dict):
     docker_client.kill(container["Id"])
     docker_client.remove_container(container["Id"])
+
+
+class DockerTestCase(IsolatedAsyncioTestCase):
+    docker_client: docker.APIClient = None
+    meili_container: dict = None
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.docker_client = get_docker_client()
+        cls.meili_config = get_testing_meili_config()
+        cls.meili_container = start_meili_container(
+            docker_client=cls.docker_client, meili_config=cls.meili_config
+        )
+        sleep(1)
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        kill_docker_container(cls.docker_client, cls.meili_container)
