@@ -1,5 +1,6 @@
 [![Tests](https://github.com/devtud/aio_meilisearch/workflows/Tests/badge.svg)](https://github.com/devtud/aio_meilisearch/actions?workflow=Tests)
-[![](https://pypip.in/v/aio_meilisearch/badge.svg)](https://pypi.python.org/pypi/aio_meilisearch)
+![pypi](https://img.shields.io/pypi/v/aio_meilisearch.svg)
+![versions](https://img.shields.io/pypi/pyversions/aio_meilisearch.svg)
 [![](https://pypip.in/license/aio_meilisearch/badge.svg)](https://pypi.python.org/pypi/aio_meilisearch)
 
 # AIO_MEILISEARCH
