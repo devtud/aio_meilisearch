@@ -36,3 +36,19 @@ class TestSearch(DockerTestCase):
             search_result = await index.documents.search(query="apple")
 
             self.assertEqual(len(FRUIT_DOCS), len(search_result["hits"]))
+
+    async def test_search_faceted_attr(self):
+        async with httpx.AsyncClient() as http_client:
+            meilisearch = MeiliSearch(
+                meili_config=self.meili_config, http_client=http_client
+            )
+
+            index: Index[Fruit] = await meilisearch.create_index("fruits", pk="id")
+            await index.update_settings({"attributesForFaceting": ["color"]})
+            await index.documents.add_many(documents=FRUIT_DOCS)
+
+            search_result = await index.documents.search(
+                query="apple", facet_filters=["color:red"]
+            )
+
+            self.assertEqual(3, len(search_result["hits"]))
