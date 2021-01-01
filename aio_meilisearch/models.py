@@ -6,7 +6,12 @@ import httpx
 from httpx import HTTPStatusError
 
 from aio_meilisearch.common import MeiliConfig, request
-from aio_meilisearch.types import UpdateDict, SearchResponse, IndexDict
+from aio_meilisearch.types import (
+    UpdateDict,
+    SearchResponse,
+    IndexDict,
+    IndexSettingsDict,
+)
 
 T = TypeVar("T")
 
@@ -173,6 +178,18 @@ class Index(Generic[T]):
                 index_name=self.name, meilisearch=self._meilisearch
             )
         return self._documents
+
+    async def get_settings(self) -> IndexSettingsDict:
+        response = await request(
+            meili_config=self._meilisearch.meili_config,
+            http_client=self._meilisearch.http_client,
+            method="GET",
+            endpoint=f"/indexes/{self.name}/settings",
+            api_key=self._meilisearch.meili_config.private_key,
+        )
+        settings: IndexSettingsDict = json.loads(response)
+
+        return settings
 
 
 class MeiliSearch:

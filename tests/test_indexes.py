@@ -48,3 +48,31 @@ class TestIndexes(DockerTestCase):
             index_list = await meilisearch.get_indexes()
 
             self.assertEqual(0, len(index_list))
+
+    async def test_default_settings(self):
+        async with httpx.AsyncClient() as http_client:
+            meilisearch = MeiliSearch(
+                meili_config=self.meili_config, http_client=http_client
+            )
+            index = await meilisearch.create_index("fruits", pk="pk")
+            settings = await index.get_settings()
+
+            self.assertDictEqual(
+                {
+                    "synonyms": {},
+                    "stopWords": [],
+                    "rankingRules": [
+                        "typo",
+                        "words",
+                        "proximity",
+                        "attribute",
+                        "wordsPosition",
+                        "exactness",
+                    ],
+                    "attributesForFaceting": [],
+                    "distinctAttribute": None,
+                    "searchableAttributes": ["*"],
+                    "displayedAttributes": ["*"],
+                },
+                settings,
+            )

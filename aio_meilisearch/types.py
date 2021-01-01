@@ -10,6 +10,16 @@ class IndexDict(TypedDict):
     updatedAt: str
 
 
+class IndexSettingsDict(TypedDict):
+    synonyms: dict
+    stopWords: List[str]
+    rankingRules: List[str]
+    attributesForFaceting: List[str]
+    distinctAttribute: Optional[str]
+    searchableAttributes: List[str]
+    displayedAttributes: List[str]
+
+
 class UpdateDict(TypedDict):
     status: str
     updateId: str
