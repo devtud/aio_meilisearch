@@ -2,7 +2,7 @@ from typing import TypedDict, List
 
 import httpx
 
-from aio_meilisearch.endpoints.documents import Index
+from aio_meilisearch.models import MeiliSearch, Index
 from tests.utils import DockerTestCase
 
 
@@ -32,9 +32,12 @@ class TestSearch(DockerTestCase):
         ]
 
         async with httpx.AsyncClient() as http_client:
-            index: Index[Fruit] = Index(
-                name="fruits", meili_config=self.meili_config, http_client=http_client
+            meilisearch = MeiliSearch(
+                meili_config=self.meili_config, http_client=http_client
             )
-            await index.add_many(documents=fruits)
-            search_result = await index.search(query="apple")
-        self.assertEqual(len(fruits), len(search_result["hits"]))
+
+            index: Index[Fruit] = await meilisearch.create_index("fruits")
+            await index.documents.add_many(documents=fruits)
+            search_result = await index.documents.search(query="apple")
+
+            self.assertEqual(len(fruits), len(search_result["hits"]))

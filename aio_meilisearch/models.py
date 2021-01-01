@@ -1,23 +1,21 @@
 import asyncio
 import json
-from typing import Generic, TypeVar, Optional, List, Union, Literal
+from typing import Generic, Optional, List, Union, Literal, TypeVar
 
 import httpx
 from httpx import HTTPStatusError
 
 from aio_meilisearch.common import MeiliConfig, request
-from aio_meilisearch.types import UpdateDict, SearchResponse
+from aio_meilisearch.types import UpdateDict, SearchResponse, IndexDict
 
 T = TypeVar("T")
 
 
-class Index(Generic[T]):
-    def __init__(
-        self, name: str, meili_config: MeiliConfig, http_client: httpx.AsyncClient
-    ):
-        self.name: str = name
-        self.meili_config: MeiliConfig = meili_config
-        self.http_client: httpx.AsyncClient = http_client
+class DocumentManager(Generic[T]):
+    def __init__(self, index_name: str, meilisearch: "MeiliSearch"):
+        self.name: str = index_name
+        self.meili_config: MeiliConfig = meilisearch.meili_config
+        self.http_client: httpx.AsyncClient = meilisearch.http_client
 
     async def get(self, document_id: str) -> Optional[T]:
         try:
@@ -159,3 +157,91 @@ class Index(Generic[T]):
             },
         )
         return json.loads(resp_bytes)
+
+
+class Index(Generic[T]):
+    def __init__(self, name: str, meilisearch: "MeiliSearch", extra: IndexDict = None):
+        self.name = name
+        self._meilisearch = meilisearch
+        self._extra: Optional[IndexDict] = extra
+        self._documents: Optional[DocumentManager[T]] = None
+
+    @property
+    def documents(self) -> DocumentManager[T]:
+        if self._documents is None:
+            self._documents: DocumentManager[T] = DocumentManager(
+                index_name=self.name, meilisearch=self._meilisearch
+            )
+        return self._documents
+
+
+class MeiliSearch:
+    def __init__(self, meili_config: MeiliConfig, http_client: httpx.AsyncClient):
+        self.meili_config = meili_config
+        self.http_client = http_client
+
+    async def get_indexes(
+        self,
+    ) -> List[Index]:
+        response = await request(
+            meili_config=self.meili_config,
+            http_client=self.http_client,
+            method="GET",
+            endpoint="/indexes",
+            api_key=self.meili_config.private_key,
+        )
+        js: List[IndexDict] = json.loads(response)
+
+        return [Index(name=index_dict["uid"], meilisearch=self) for index_dict in js]
+
+    async def get_index(self, name: str, raise_404: bool = False) -> Optional[Index]:
+        try:
+            index_dict: IndexDict = json.loads(
+                await request(
+                    meili_config=self.meili_config,
+                    http_client=self.http_client,
+                    method="GET",
+                    endpoint=f"/indexes/{name}",
+                    api_key=self.meili_config.private_key,
+                )
+            )
+        except httpx.HTTPStatusError as e:
+            if not raise_404 and e.response.status_code == httpx.codes.NOT_FOUND:
+                return None
+            raise e
+        return Index(name=index_dict["uid"], meilisearch=self, extra=index_dict)
+
+    async def create_index(self, name: str, pk: str = None) -> Index:
+        index_dict: IndexDict = json.loads(
+            await request(
+                meili_config=self.meili_config,
+                http_client=self.http_client,
+                method="POST",
+                endpoint="/indexes",
+                data={"uid": name, "primaryKey": pk},
+                api_key=self.meili_config.private_key,
+            )
+        )
+        return Index(name=index_dict["uid"], meilisearch=self, extra=index_dict)
+
+    async def update_index(self, name: str, pk: str = None) -> Index:
+        index_dict: IndexDict = json.loads(
+            await request(
+                meili_config=self.meili_config,
+                http_client=self.http_client,
+                method="PUT",
+                endpoint=f"/indexes/{name}",
+                data={"primaryKey": pk},
+                api_key=self.meili_config.private_key,
+            )
+        )
+        return Index(name=index_dict["uid"], meilisearch=self, extra=index_dict)
+
+    async def delete_index(self, name: str):
+        await request(
+            meili_config=self.meili_config,
+            http_client=self.http_client,
+            method="DELETE",
+            endpoint=f"indexes/{name}",
+            api_key=self.meili_config.private_key,
+        )
