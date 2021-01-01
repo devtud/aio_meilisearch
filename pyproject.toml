@@ -1,8 +1,24 @@
 [tool.poetry]
 name = "aio_meilisearch"
 version = "0.1.0"
-description = ""
+description = "Async library for MeiliSearch"
+readme = "README.md"
+repository = "https://github.com/devtud/aio_meilisearch"
+homepage = "https://github.com/devtud/aio_meilisearch"
 authors = ["devtud <devtud@gmail.com>"]
+keywords = ["asyncio", "meilisearch"]
+include = ["README.md"]
+license = "MIT"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Framework :: AsyncIO",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Topic :: Software Development :: Libraries :: Application Frameworks"
+]
 
 [tool.poetry.dependencies]
 python = "^3.8"
