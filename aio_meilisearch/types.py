@@ -1,5 +1,4 @@
-from dataclasses import dataclass
-from typing import TypedDict, Optional, Generic, TypeVar, List
+from typing import TypedDict, Optional, TypeVar, List, Protocol, overload, Literal
 
 T = TypeVar("T")
 
@@ -20,14 +19,42 @@ class UpdateDict(TypedDict):
     processedAt: str
 
 
-@dataclass
-class SearchResponse(Generic[T]):
-    hits: List[T]
-    offset: int
-    limit: int
-    nbHits: int
-    exhaustiveNbHits: bool
-    facetDistribution: dict
-    exhaustiveFacetsCount: bool
-    processingTimeMs: int
-    query: str
+class SearchResponse(Protocol[T]):
+    @overload
+    def __getitem__(self, item: Literal["hits"]) -> List[T]:
+        ...
+
+    @overload
+    def __getitem__(self, item: Literal["offset"]) -> int:
+        ...
+
+    @overload
+    def __getitem__(self, item: Literal["limit"]) -> int:
+        ...
+
+    @overload
+    def __getitem__(self, item: Literal["nbHits"]) -> int:
+        ...
+
+    @overload
+    def __getitem__(self, item: Literal["exhaustiveNbHits"]) -> bool:
+        ...
+
+    @overload
+    def __getitem__(self, item: Literal["facetDistribution"]) -> dict:
+        ...
+
+    @overload
+    def __getitem__(self, item: Literal["exhaustiveFacetsCount"]) -> bool:
+        ...
+
+    @overload
+    def __getitem__(self, item: Literal["processingTimeMs"]) -> int:
+        ...
+
+    @overload
+    def __getitem__(self, item: Literal["query"]) -> str:
+        ...
+
+    def __getitem__(self, item):
+        return super().__getitem__(item)
