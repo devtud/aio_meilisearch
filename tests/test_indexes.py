@@ -1,4 +1,3 @@
-import asyncio
 from typing import List
 
 import httpx
@@ -8,17 +7,6 @@ from tests.utils import DockerTestCase
 
 
 class TestIndexes(DockerTestCase):
-    def tearDown(self) -> None:
-        http_client = httpx.AsyncClient()
-        meilisearch = MeiliSearch(
-            meili_config=self.meili_config, http_client=http_client
-        )
-        loop = asyncio.get_event_loop()
-        indexes = loop.run_until_complete(meilisearch.get_indexes())
-        for index in indexes:
-            loop.run_until_complete(meilisearch.delete_index(index.name))
-        loop.run_until_complete(http_client.aclose())
-
     async def test_flow(self):
         async with httpx.AsyncClient() as http_client:
             meilisearch = MeiliSearch(

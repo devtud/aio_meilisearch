@@ -1,11 +1,14 @@
+import asyncio
 import uuid
 from time import sleep
 from unittest.async_case import IsolatedAsyncioTestCase
 
 import docker
+import httpx
 from docker.models.containers import Container
 
 from aio_meilisearch.common import MeiliConfig
+from aio_meilisearch.models import MeiliSearch
 
 MEILISEARCH_DOCKER_IMAGE = "getmeili/meilisearch:v0.17.0"
 
@@ -56,12 +59,26 @@ class DockerTestCase(IsolatedAsyncioTestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
+        """ Before each test class create meili container """
         cls.meili_config = get_testing_meili_config()
         cls.meili_container = start_meili_container(meili_config=cls.meili_config)
         sleep(1)
 
     @classmethod
     def tearDownClass(cls) -> None:
+        """ After each test class destroy the container"""
         cls.meili_container.kill()
         cls.meili_container.remove()
         cls.meili_container.client.close()
+
+    def tearDown(self) -> None:
+        """ After each test method remove all indexes from meili db"""
+        http_client = httpx.AsyncClient()
+        meilisearch = MeiliSearch(
+            meili_config=self.meili_config, http_client=http_client
+        )
+        loop = asyncio.get_event_loop()
+        indexes = loop.run_until_complete(meilisearch.get_indexes())
+        for index in indexes:
+            loop.run_until_complete(meilisearch.delete_index(index.name))
+        loop.run_until_complete(http_client.aclose())
