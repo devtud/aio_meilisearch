@@ -31,7 +31,7 @@ def start_meili_container(
     docker_client = docker.DockerClient(base_url=docker_base_url, version="auto")
 
     container: Container = docker_client.containers.create(
-        image="getmeili/meilisearch:v0.16.0",
+        image="getmeili/meilisearch:v0.17.0",
         name=f"test-meilisearch-{uuid.uuid4()}",
         detach=True,
         ports={7700: 7700},
