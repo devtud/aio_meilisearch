@@ -7,6 +7,8 @@ from docker.models.containers import Container
 
 from aio_meilisearch.common import MeiliConfig
 
+MEILISEARCH_DOCKER_IMAGE = "getmeili/meilisearch:v0.17.0"
+
 
 def get_testing_master_key() -> str:
     return "testing_master_key"
@@ -30,8 +32,10 @@ def start_meili_container(
 ) -> Container:
     docker_client = docker.DockerClient(base_url=docker_base_url, version="auto")
 
+    docker_client.api.pull(MEILISEARCH_DOCKER_IMAGE)
+
     container: Container = docker_client.containers.create(
-        image="getmeili/meilisearch:v0.17.0",
+        image=MEILISEARCH_DOCKER_IMAGE,
         name=f"test-meilisearch-{uuid.uuid4()}",
         detach=True,
         ports={7700: 7700},
