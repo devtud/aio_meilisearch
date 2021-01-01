@@ -71,6 +71,9 @@ class DockerTestCase(IsolatedAsyncioTestCase):
         cls.meili_container.remove()
         cls.meili_container.client.close()
 
+    def setUp(self) -> None:
+        self.maxDiff = None
+
     def tearDown(self) -> None:
         """ After each test method remove all indexes from meili db"""
         http_client = httpx.AsyncClient()

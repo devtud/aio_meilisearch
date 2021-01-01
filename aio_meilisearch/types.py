@@ -10,7 +10,7 @@ class IndexDict(TypedDict):
     updatedAt: str
 
 
-class IndexSettingsDict(TypedDict):
+class IndexSettingsDict(TypedDict, total=False):
     synonyms: dict
     stopWords: List[str]
     rankingRules: List[str]

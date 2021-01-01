@@ -1,11 +1,10 @@
-import asyncio
 import json
 from typing import Generic, Optional, List, Union, Literal, TypeVar
 
 import httpx
 from httpx import HTTPStatusError
 
-from aio_meilisearch.common import MeiliConfig, request
+from aio_meilisearch.common import MeiliConfig, request, get_finished_update
 from aio_meilisearch.types import (
     UpdateDict,
     SearchResponse,
@@ -73,27 +72,12 @@ class DocumentManager(Generic[T]):
 
         update: UpdateDict = json.loads(response)
 
-        await self._get_finished_update(update["updateId"])
-
-    async def _get_update(self, update_id: str) -> UpdateDict:
-        return json.loads(
-            await request(
-                meili_config=self.meili_config,
-                http_client=self.http_client,
-                method="GET",
-                endpoint=f"/indexes/{self.name}/updates/{update_id}",
-                api_key=self.meili_config.private_key,
-            )
+        await get_finished_update(
+            update_id=update["updateId"],
+            index_name=self.name,
+            meili_config=self.meili_config,
+            http_client=self.http_client,
         )
-
-    async def _get_finished_update(self, update_id) -> UpdateDict:
-        while True:
-            update = await self._get_update(update_id)
-            if update["status"] == "processed":
-                return update
-            if update["status"] == "failed":
-                raise Exception("Updated failed")
-            await asyncio.sleep(0.25)
 
     async def delete_all(self):
         await self._delete_documents("all")
@@ -126,7 +110,12 @@ class DocumentManager(Generic[T]):
 
         update: UpdateDict = json.loads(response)
 
-        await self._get_finished_update(update_id=update["updateId"])
+        await get_finished_update(
+            update_id=update["updateId"],
+            index_name=self.name,
+            meili_config=self.meili_config,
+            http_client=self.http_client,
+        )
 
     async def search(
         self,
@@ -190,6 +179,25 @@ class Index(Generic[T]):
         settings: IndexSettingsDict = json.loads(response)
 
         return settings
+
+    async def update_settings(self, settings: IndexSettingsDict):
+        response = await request(
+            meili_config=self._meilisearch.meili_config,
+            http_client=self._meilisearch.http_client,
+            method="POST",
+            endpoint=f"/indexes/{self.name}/settings",
+            data=settings,
+            api_key=self._meilisearch.meili_config.private_key,
+        )
+
+        update: UpdateDict = json.loads(response)
+
+        await get_finished_update(
+            update_id=update["updateId"],
+            index_name=self.name,
+            meili_config=self._meilisearch.meili_config,
+            http_client=self._meilisearch.http_client,
+        )
 
 
 class MeiliSearch:
