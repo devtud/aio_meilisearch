@@ -26,10 +26,6 @@ def get_testing_meili_config() -> MeiliConfig:
     )
 
 
-def get_docker_client() -> docker.DockerClient:
-    return docker.DockerClient(base_url="unix://var/run/docker.sock", version="auto")
-
-
 def start_meili_container(
     meili_config: MeiliConfig, docker_base_url: str = "unix://var/run/docker.sock"
 ) -> Container:
@@ -43,7 +39,7 @@ def start_meili_container(
         detach=True,
         ports={7700: 7700},
         environment={
-            "MEILI_ENV": "production",
+            "MEILI_ENV": "development",
             "MEILI_NO_ANALYTICS": "true",
             "MEILI_MASTER_KEY": meili_config.master_key,
         },
