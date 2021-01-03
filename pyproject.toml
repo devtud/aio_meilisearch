@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "aio_meilisearch"
-version = "0.1.0"
+version = "0.1.1"
 description = "Async library for MeiliSearch"
 readme = "README.md"
 repository = "https://github.com/devtud/aio_meilisearch"
